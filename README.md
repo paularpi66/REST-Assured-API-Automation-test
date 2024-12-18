@@ -25,5 +25,5 @@ Code	Explanation
 ``` Method()``` Substitute this with any of the CRUD operations(get/post/put/delete)
 ``` Then()```   Your assert and matcher conditions go here
 
-## The Objective of your test:
+## The Objective of my test:
 The goal of the script is to print the same output on my IDE console as what i received on the browser through Rest Assured.
