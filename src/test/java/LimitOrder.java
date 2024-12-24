@@ -4,14 +4,12 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
 import io.restassured.response.ResponseBody;
 import io.restassured.response.Response;
 
 import java.util.*;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasLength;
-
 
 public class LimitOrder {
     @Test (priority = 1)
@@ -87,22 +85,22 @@ public class LimitOrder {
 
         System.out.println("STEP: verifying status code to be 200");
         responseTickerList.then()
-                .assertThat().statusCode(200);
-        ArrayList tickerList = responseTickerList.getBody().jsonPath().getJsonObject("data");
-        System.out.println("Got " + tickerList.size() + " tickers");
+                .assertThat().statusCode(200).assertThat().body("data.size()", greaterThan(0));
+
+        List tickerList = responseTickerList.getBody().jsonPath().getList("data");
+        System.out.println("Got " + tickerList.size() + " tickers" + tickerList.getClass() + tickerList.get(0));
 
         Object randomTickerID = tickerList.get((int)(Math.random() % tickerList.size()));
         System.out.println("Step 4+++++++" + randomTickerID);
-
-
 
         // =========== set limit =============
         given()
                 .header("Content-Type", "application/json")
                 .header("STOCKX-AUTH", sessionOTP)
                 .body("{\"userId\":\"438\",\"clientCode\":\"61257\",\"orderType\":\"1\",\"tickerId\":"+randomTickerID+",\"quantity\":1,\"limitPrice\":43,\"instructionType\":1}")
+                .baseUri(baseURL)
                 .when()
-                .post("https://api-dev.techetronventures.com/place-order")
+                .post("/place-order")
                 .then()
                 .assertThat().statusCode(200);
         System.out.println("Step 5+++++++" );
