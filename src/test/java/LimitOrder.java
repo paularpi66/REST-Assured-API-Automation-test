@@ -90,39 +90,33 @@ public class LimitOrder {
                 .assertThat().body("data.allTickerStatus.size()", greaterThan(0));
 
         int len = responseTickerList.getBody().jsonPath().getInt("data.allTickerStatus.size()");
-        System.out.println("+++++++ list size"+ len);
+        System.out.println("+++++++ list size "+ len);
 
         Random rand = new Random();
         int randIdx = rand.nextInt(len);
-        System.out.println("+++++++++ rand Index" + randIdx);
+        System.out.println("+++++++++ rand Index " + randIdx);
         JsonPath jp = responseTickerList.getBody().jsonPath();
         String randTickerPath = "data.allTickerStatus["+randIdx+"]";
         int randomTickerID = jp.getInt(randTickerPath+".tickerID");
         double maxPrice = jp.getDouble(randTickerPath + ".maxPrice");
         double minPrice = jp.getDouble(randTickerPath + ".minPrice");
-        double randomLimit = rand.nextDouble(minPrice, maxPrice);
-        System.out.println("Step 5 +++++++ " + randomTickerID + ": ["+ minPrice + ", " + maxPrice + "] " + randomLimit);
+        System.out.println("Step 5 +++++++ random ticker id: " + randomTickerID);
+        System.out.println("Step 6 +++++++ minPrice: "+ minPrice);
+        System.out.println("Step 7 +++++++ maxPrice: " + maxPrice);
+        double randomLimit = Math.floor( rand.nextDouble(minPrice, maxPrice));
+        System.out.println("Step 8 +++++++ random limit: " + randomLimit);
 
         // =========== set limit =============
+        System.out.println("Step 8: SET LIMIT: +++++++" );
         given()
                 .header("Content-Type", "application/json")
                 .header("STOCKX-AUTH", sessionOTP)
-                .body("{\"userId\":\""+userID+"\",\"clientCode\":\""+clientCode+"\",\"orderType\":\"1\",\"tickerId\":"+randomTickerID+",\"quantity\":1,\"limitPrice\":"+randomLimit+",\"instructionType\":1}")
+                .body("{\"clientCode\":\""+clientCode+"\",\"orderType\":\"1\",\"tickerId\":"+randomTickerID+",\"quantity\":1,\"limitPrice\":"+randomLimit+",\"instructionType\":1}")
                 .baseUri(baseURL)
                 .when()
-                .post("/place-order")
+                .post("/api/v1/portfolio/place-order")
                 .then()
                 .assertThat().statusCode(200);
-        System.out.println("Step 5+++++++" );
 
-        // =========== place order =============
-        given()
-                .header("Content-Type", "application/json")
-                .header("STOCKX-AUTH", "<access_token>") // todo: collect access token
-                .body("{\"userId\": \"711\",\"clientCode\": \"62190\",\"orderType\": \"1\",\"tickerId\": 2102 ,\"limitPrice\": 20,\"quantity\": 2,\"instructionType\": 1}")
-                .when()
-                .post("https://api-dev.techetronventures.com/api/v1/portfolio/place-order")
-                .then()
-                .assertThat().statusCode(200);
     }
 }
