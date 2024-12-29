@@ -1,5 +1,6 @@
 //package test.java;
 
+import io.restassured.path.json.JsonPath;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -73,31 +74,40 @@ public class LimitOrder {
         System.out.println("Got user id: " + userID + "; clientID : " + clientCode);
 
 
-        // =========== ticker list =============
+        // =========== ticker status =============
         System.out.println("STEP: Get ticker list");
         Response responseTickerList = given()
-                .header("STOCKX-AUTH", sessionOTP)
+//                .header("STOCKX-AUTH", sessionOTP)
                 .baseUri(baseURL)
-                .queryParam("userId", userID)
-                .queryParam("clientCode", clientCode)
+//                .queryParam("userId", userID)
+//                .queryParam("clientCode", clientCode)
                 .when()
-                .get("/api/v1/portfolio/trigger-list");
+                .get("/api/v1/public/bazar/mdf/all-ticker-status");
 
         System.out.println("STEP: verifying status code to be 200");
         responseTickerList.then()
-                .assertThat().statusCode(200).assertThat().body("data.size()", greaterThan(0));
+                .assertThat().statusCode(200)
+                .assertThat().body("data.allTickerStatus.size()", greaterThan(0));
 
-        List tickerList = responseTickerList.getBody().jsonPath().getList("data");
-        System.out.println("Got " + tickerList.size() + " tickers" + tickerList.getClass() + tickerList.get(0));
+        int len = responseTickerList.getBody().jsonPath().getInt("data.allTickerStatus.size()");
+        System.out.println("+++++++ list size"+ len);
 
-        Object randomTickerID = tickerList.get((int)(Math.random() % tickerList.size()));
-        System.out.println("Step 4+++++++" + randomTickerID);
+        Random rand = new Random();
+        int randIdx = rand.nextInt(len);
+        System.out.println("+++++++++ rand Index" + randIdx);
+        JsonPath jp = responseTickerList.getBody().jsonPath();
+        String randTickerPath = "data.allTickerStatus["+randIdx+"]";
+        int randomTickerID = jp.getInt(randTickerPath+".tickerID");
+        double maxPrice = jp.getDouble(randTickerPath + ".maxPrice");
+        double minPrice = jp.getDouble(randTickerPath + ".minPrice");
+        double randomLimit = rand.nextDouble(minPrice, maxPrice);
+        System.out.println("Step 5 +++++++ " + randomTickerID + ": ["+ minPrice + ", " + maxPrice + "] " + randomLimit);
 
         // =========== set limit =============
         given()
                 .header("Content-Type", "application/json")
                 .header("STOCKX-AUTH", sessionOTP)
-                .body("{\"userId\":\"438\",\"clientCode\":\"61257\",\"orderType\":\"1\",\"tickerId\":"+randomTickerID+",\"quantity\":1,\"limitPrice\":43,\"instructionType\":1}")
+                .body("{\"userId\":\""+userID+"\",\"clientCode\":\""+clientCode+"\",\"orderType\":\"1\",\"tickerId\":"+randomTickerID+",\"quantity\":1,\"limitPrice\":"+randomLimit+",\"instructionType\":1}")
                 .baseUri(baseURL)
                 .when()
                 .post("/place-order")
